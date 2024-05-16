@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Personajes Dragon Ball</title>
+    <style>
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      th,td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+      }
+
+      thead{
+        background-color: black;
+        color: white;
+      }
+
+      .detalle-personaje {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Personajes Dragon Ball</h1>
+
+    <div>
+      <input type="text" id="nombre" placeholder="Buscar por nombre..." />
+      <input type="text" id="raza" placeholder="Buscar por raza..." />
+      <input type="text" id="genero" placeholder="Buscar por género..." />
+      <button id="botonBuscar">Buscar</button>
+    </div>
+
+    <table id="tablaPersonajes">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Raza</th>
+          <th>Género</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="detalle-personaje"></div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tablaPersonajes = document.getElementById("tablaPersonajes");
+        const cuerpoTabla = tablaPersonajes.querySelector("tbody");
+        const nombre = document.getElementById("nombre");
+        const raza = document.getElementById("raza");
+        const genero = document.getElementById("genero");
+        const botonBuscar = document.getElementById("botonBuscar");
+        const detallePersonaje = document.querySelector(".detalle-personaje");
+
+        function obtenerPersonajes(url) {
+          fetch(url)
+            .then((respuesta) => respuesta.json())
+            .then((data) => {
+              cuerpoTabla.innerHTML = "";
+              data.forEach((personaje) => {
+                const fila = document.createElement("tr");
+                fila.innerHTML = `
+                            <td>${personaje.id}</td>
+                            <td><a href="#" class="enlace-personaje" data-id="${personaje.id}">${personaje.name}</a></td>
+                            <td>${personaje.race}</td>
+                            <td>${personaje.gender}</td>
+                        `;
+                cuerpoTabla.appendChild(fila);
+              });
+
+              const enlacesPersonajes =
+                document.querySelectorAll(".enlace-personaje");
+              enlacesPersonajes.forEach((enlace) => {
+                enlace.addEventListener("click", function (evento) {
+                  evento.preventDefault();
+                  const idPersonaje = this.getAttribute("data-id");
+                  obtenerDetallesPersonaje(idPersonaje);
+                });
+              });
+            })
+            .catch((error) =>
+              console.error("Error al obtener los personajes:", error)
+            );
+        }
+
+        // Función para obtener los detalles de un personaje de la API
+        function obtenerDetallesPersonaje(idPersonaje) {
+          fetch(`https://dragonball-api.com/api/characters/${idPersonaje}`)
+            .then((response) => response.json())
+            .then((personaje) => {
+              const detallesHtml = `
+                        <h2>${personaje.name}</h2>
+                        <p><strong>Raza:</strong> ${personaje.race}</p>
+                        <p><strong>Género:</strong> ${personaje.gender}</p>
+                        <p><strong>Estado:</strong> ${personaje.status}</p>
+                        <p><strong>Origen:</strong> ${personaje.origin}</p>
+                        <p><strong>Ocupación:</strong> ${personaje.occupation}</p>
+                    `;
+              detallePersonaje.innerHTML = detallesHtml;
+              detallePersonaje.style.display = "block";
+            })
+            .catch((error) =>
+              console.error(
+                "Error al obtener los detalles del personaje:",
+                error
+              )
+            );
+        }
+
+        // Obtener los primeros 10 personajes al cargar la página
+        obtenerPersonajes("https://dragonball-api.com/api/characters");
+
+        // Evento para el botón de búsqueda
+        botonBuscar.addEventListener("click", function () {
+          buscarPersonajes();
+        });
+
+        function buscarPersonajes() {
+          let url = "https://dragonball-api.com/api/characters?";
+          const nombreValor = nombre.value.trim().toLowerCase();
+          const razaValor = raza.value.trim().toLowerCase();
+          const generoValor = genero.value.trim().toLowerCase();
+
+          if (nombreValor) url += `name=${nombreValor}&`;
+          if (razaValor) url += `race=${razaValor}&`;
+          if (generoValor) url += `gender=${generoValor}&`;
+
+          // Eliminar '&' final si está presente
+          if (url.endsWith("&")) url = url.slice(0, -1);
+
+          obtenerPersonajes(url);
+        }
+      });
+    </script>
+  </body>
+</html>
