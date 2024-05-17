@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personajes Dragon Ball</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    table {
+      width: 90%;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid #dddddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    tbody tr:active{
+      font-weight: bold;
+    }
+
+    .detalle-personaje {
+      display: none;
+      border: 1px solid black;
+      padding: 20px;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+
+    .detalle-personaje img {
+      display: block;
+      margin: 0 auto 20px;
+      max-height: 250px;
+      max-width: 100%;
+    }
+
+    .detalle-personaje h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .detalle-personaje div {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Personajes Dragon Ball</h1>
+
+  <div>
+    <input type="text" id="nombre" placeholder="Buscar por nombre..." />
+    <input type="text" id="raza" placeholder="Buscar por raza..." />
+    <input type="text" id="genero" placeholder="Buscar por género..." />
+    <button id="botonBuscar">Buscar</button>
+  </div>
+
+  <table id="tabla-personajes">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Raza</th>
+        <th>Género</th>
+      </tr>
+    </thead>
+    <tbody id="cuerpo-personajes"></tbody>
+  </table>
+
+  <div class="detalle-personaje"></div>
+
+  <div class="paginacion">
+    <button id="primera-pagina">Primera Página</button>
+    <button id="pagina-anterior">Página Anterior</button>
+    <button id="siguiente-pagina">Siguiente Página</button>
+    <button id="ultima-pagina">Última Página</button>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const cuerpoTabla = document.getElementById("cuerpo-personajes");
+      const primeraPaginaBtn = document.getElementById("primera-pagina");
+      const paginaAnteriorBtn = document.getElementById("pagina-anterior");
+      const siguientePaginaBtn = document.getElementById("siguiente-pagina");
+      const ultimaPaginaBtn = document.getElementById("ultima-pagina");
+
+      let paginaActual = 1;
+
+      function obtenerPersonajes(pagina) {
+        fetch(`https://dragonball-api.com/api/characters?page=${pagina}&limit=10`)
+          .then((respuesta) => respuesta.json())
+          .then((data) => {
+            const personajes = data.items;
+
+            cuerpoTabla.innerHTML = "";
+
+            personajes.forEach((personaje) => {
+              const fila = document.createElement("tr");
+              fila.innerHTML = `
+                <td>${personaje.id}</td>
+                <td>${personaje.name}</td>
+                <td>${personaje.race}</td>
+                <td>${personaje.gender}</td>
+              `;
+              fila.addEventListener("click", function () {
+                obtenerDetallesPersonaje(personaje.id);
+              });
+              cuerpoTabla.appendChild(fila);
+            });
+          })
+          .catch((error) => {
+            console.error("Error al obtener los datos:", error);
+          });
+      }
+
+      function obtenerDetallesPersonaje(idPersonaje) {
+        fetch(`https://dragonball-api.com/api/characters/${idPersonaje}`)
+          .then((respuesta) => respuesta.json())
+          .then((personaje) => {
+            const detallePersonaje = document.querySelector(".detalle-personaje");
+            const detallesHtml = `
+              <h2>${personaje.name}</h2>
+              <img src="${personaje.image}" alt="${personaje.name}">
+              <div>
+                <p><strong>Raza:</strong> ${personaje.race}</p>
+                <p><strong>Género:</strong> ${personaje.gender}</p>
+                <p><strong>Descripción:</strong> ${personaje.description}</p>
+                <p><strong>Afiliación:</strong> ${personaje.affiliation}</p>
+              </div>
+            `;
+            detallePersonaje.innerHTML = detallesHtml;
+            detallePersonaje.style.display = "block";
+          })
+          .catch((error) => {
+            console.error("Error al obtener los detalles del personaje:", error);
+          });
+      }
+
+      primeraPaginaBtn.addEventListener("click", function () {
+        paginaActual = 1;
+        obtenerPersonajes(paginaActual);
+      });
+
+      paginaAnteriorBtn.addEventListener("click", function () {
+        if (paginaActual > 1) {
+          paginaActual--;
+          obtenerPersonajes(paginaActual);
+        }
+      });
+
+      siguientePaginaBtn.addEventListener("click", function () {
+        paginaActual++;
+        obtenerPersonajes(paginaActual);
+      });
+
+      ultimaPaginaBtn.addEventListener("click", function () {
+        paginaActual = 6; // Suponiendo que hay 6 páginas
+        obtenerPersonajes(paginaActual);
+      });
+
+      obtenerPersonajes(paginaActual);
+
+      const nombre = document.getElementById("nombre");
+      const raza = document.getElementById("raza");
+      const genero = document.getElementById("genero");
+      const botonBuscar = document.getElementById("botonBuscar");
+
+      botonBuscar.addEventListener("click", function () {
+        buscarPersonajes();
+      });
+
+      function buscarPersonajes() {
+        let url = "https://dragonball-api.com/api/characters?";
+        const nombreValor = nombre.value.trim().toLowerCase();
+        const razaValor = raza.value.trim().toLowerCase();
+        const generoValor = genero.value.trim().toLowerCase();
+
+        if (nombreValor) url += `name=${nombreValor}&`;
+        if (razaValor) url += `race=${razaValor}&`;
+        if (generoValor) url += `gender=${generoValor}&`;
+
+        if (url.endsWith("&")) url = url.slice(0, -1);
+
+        fetch(url)
+          .then((respuesta) => respuesta.json())
+          .then((data) => {
+            const personajes = data;
+
+            cuerpoTabla.innerHTML = "";
+
+            personajes.forEach((personaje) => {
+              const fila = document.createElement("tr");
+              fila.innerHTML = `
+                <td>${personaje.id}</td>
+                <td>${personaje.name}</td>
+                <td>${personaje.race}</td>
+                <td>${personaje.gender}</td>
+              `;
+              fila.addEventListener("click", function () {
+                obtenerDetallesPersonaje(personaje.id);
+              });
+              cuerpoTabla.appendChild(fila);
+            });
+          })
+          .catch((error) =>
+            console.error("Error al obtener los personajes:", error)
+          );
+      }
+    });
+  </script>
+</body>
+</html>
